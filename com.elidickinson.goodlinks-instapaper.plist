@@ -3,7 +3,7 @@
 <plist version="1.0">
 <dict>
     <key>Label</key>
-    <string>com.esd.goodlinks-instapaper</string>
+    <string>com.elidickinson.goodlinks-instapaper</string>
 
     <key>ProgramArguments</key>
     <array>
