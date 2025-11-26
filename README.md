@@ -32,8 +32,8 @@ This creates a config at `~/Library/Application Support/goodlinks-instapaper/con
 ## Background Sync (every 3 hours)
 
 ```bash
-cp com.esd.goodlinks-instapaper.plist ~/Library/LaunchAgents/
-launchctl load ~/Library/LaunchAgents/com.esd.goodlinks-instapaper.plist
+cp com.elidickinson.goodlinks-instapaper.plist ~/Library/LaunchAgents/
+launchctl load ~/Library/LaunchAgents/com.elidickinson.goodlinks-instapaper.plist
 ```
 
 **Note**: The launchd plist file assumes `uv` is located at `/opt/homebrew/bin/uv`. If your `uv` installation is elsewhere, you'll need to update the path in the plist file. To find your uv location, run:
@@ -48,8 +48,8 @@ Logs: `~/Library/Logs/goodlinks-instapaper.log`
 
 To uninstall:
 ```bash
-launchctl unload ~/Library/LaunchAgents/com.esd.goodlinks-instapaper.plist
-rm ~/Library/LaunchAgents/com.esd.goodlinks-instapaper.plist
+launchctl unload ~/Library/LaunchAgents/com.elidickinson.goodlinks-instapaper.plist
+rm ~/Library/LaunchAgents/com.elidickinson.goodlinks-instapaper.plist
 ```
 
 ## Config
