@@ -14,15 +14,15 @@ How it works:
 3. Adds new links to Instapaper via Simple API (HTTP Basic Auth)
 4. Updates state file to track what's been synced
 
-Config: ~/Library/Application Support/goodlinks-instapaper/config.json
+Config: ~/Library/Application Support/goodlinks2insta/config.json
   {
     "username": "...",
     "password": "...",
     "launch_goodlinks": true,
-    "log_file": "~/Library/Logs/goodlinks-instapaper.log"
+    "log_file": "~/Library/Logs/goodlinks2insta.log"
   }
 
-State: ~/Library/Application Support/goodlinks-instapaper/synced.json
+State: ~/Library/Application Support/goodlinks2insta/synced.json
 """
 
 import argparse
@@ -37,12 +37,12 @@ from pathlib import Path
 
 import requests
 
-APP_DIR = Path("~/Library/Application Support/goodlinks-instapaper").expanduser()
+APP_DIR = Path("~/Library/Application Support/goodlinks2insta").expanduser()
 STATE_FILE = APP_DIR / "synced.json"
 CONFIG_FILE = APP_DIR / "config.json"
-DEFAULT_LOG_FILE = Path("~/Library/Logs/goodlinks-instapaper.log").expanduser()
+DEFAULT_LOG_FILE = Path("~/Library/Logs/goodlinks2insta.log").expanduser()
 
-log = logging.getLogger("goodlinks-instapaper")
+log = logging.getLogger("goodlinks2insta")
 
 
 def setup_logging(quiet: bool, log_file: Path | None):
@@ -87,9 +87,16 @@ def ensure_goodlinks_running(launch_if_needed: bool) -> bool:
     if launch_if_needed:
         log.info("Launching GoodLinks...")
         launch_goodlinks()
-        return is_goodlinks_running()
+        if is_goodlinks_running():
+            return True
+        else:
+            log.error("GoodLinks failed to start")
+            return False
 
-    log.warning("GoodLinks is not running and launch_goodlinks is disabled")
+    log.warning(
+        "GoodLinks is not running and launch_goodlinks is disabled in config\n"
+        "Either start GoodLinks manually or set 'launch_goodlinks': true in config"
+    )
     return False
 
 
@@ -107,7 +114,13 @@ def get_goodlinks():
     """
     result = subprocess.run(["osascript", "-e", script], capture_output=True, text=True)
     if result.returncode != 0:
-        raise RuntimeError(f"AppleScript failed: {result.stderr}")
+        if "No such process" in result.stderr or "not running" in result.stderr:
+            raise RuntimeError(
+                "Cannot connect to GoodLinks - is the app installed and running?\n"
+                "GoodLinks must be running in the background to sync links"
+            )
+        else:
+            raise RuntimeError(f"AppleScript failed: {result.stderr}")
 
     links = []
     for line in result.stdout.strip().split("\n"):
@@ -152,11 +165,13 @@ def cmd_init(args):
         return
 
     print("Enter your Instapaper credentials:")
+    print("  Note: Use your Instapaper email and password you use to log in")
     username = input("  Email: ").strip()
     password = getpass.getpass("  Password: ").strip()
 
     if not username or not password:
-        print("Error: username and password required")
+        print("Error: Instapaper email and password are both required")
+        print("  Make sure you've entered both fields and try again")
         sys.exit(1)
 
     config = {
@@ -186,7 +201,10 @@ def add_to_instapaper(url, title, username, password, max_retries=3):
             if resp.status_code == 201:
                 return True
             elif resp.status_code == 403:
-                raise RuntimeError("Instapaper auth failed - check credentials")
+                raise RuntimeError(
+                    "Instapaper authentication failed - check your email and password\n"
+                    "Run './sync.py init' to update your credentials"
+                )
             elif resp.status_code == 400:
                 # Bad request - likely invalid URL, don't retry
                 return False
@@ -206,7 +224,9 @@ def add_to_instapaper(url, title, username, password, max_retries=3):
                     return False
             else:
                 # Other client errors - don't retry
-                log.warning(f"Unexpected status code: {resp.status_code}")
+                log.warning(
+                    f"Instapaper returned status {resp.status_code} - skipping this link"
+                )
                 return False
 
         except requests.exceptions.Timeout:

@@ -3,7 +3,7 @@
 <plist version="1.0">
 <dict>
     <key>Label</key>
-    <string>com.elidickinson.goodlinks-instapaper</string>
+    <string>com.elidickinson.goodlinks2insta</string>
 
     <key>ProgramArguments</key>
     <array>
@@ -21,6 +21,6 @@
     <true/>
 
     <key>StandardErrorPath</key>
-    <string>/tmp/goodlinks-instapaper-stderr.log</string>
+    <string>/tmp/goodlinks2insta-stderr.log</string>
 </dict>
 </plist>
