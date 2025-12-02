@@ -1,6 +1,6 @@
-# GoodLinks to Instapaper Sync
+# GoodLinks2Insta - sync saved links from GoodLinks
 
-Automatically sync saved links from GoodLinks to Instapaper. 
+GoodLinks2Insta automatically syncs saved links from GoodLinks to your Instapaper account. This tool bridges the gap between GoodLinks (Apple-optimized) and Instapaper (better integration ecosystem). 
 
 GoodLinks is a great read later app, but only in the Apple ecosystem. Instapaper does not seem great at all, but has lots of integrations. 
 
@@ -18,7 +18,7 @@ GoodLinks is a great read later app, but only in the Apple ecosystem. Instapaper
 ./sync.py init
 ```
 
-This creates a config at `~/Library/Application Support/goodlinks-instapaper/config.json`.
+This creates a config at `~/Library/Application Support/goodlinks2insta/config.json`.
 
 ## Usage
 
@@ -32,8 +32,8 @@ This creates a config at `~/Library/Application Support/goodlinks-instapaper/con
 ## Background Sync (every 3 hours)
 
 ```bash
-cp com.elidickinson.goodlinks-instapaper.plist ~/Library/LaunchAgents/
-launchctl load ~/Library/LaunchAgents/com.elidickinson.goodlinks-instapaper.plist
+cp com.elidickinson.goodlinks2insta.plist ~/Library/LaunchAgents/
+launchctl load ~/Library/LaunchAgents/com.elidickinson.goodlinks2insta.plist
 ```
 
 **Note**: The launchd plist file assumes `uv` is located at `/opt/homebrew/bin/uv`. If your `uv` installation is elsewhere, you'll need to update the path in the plist file. To find your uv location, run:
@@ -44,24 +44,24 @@ which uv
 
 Then edit the plist file and replace `/opt/homebrew/bin/uv` with the output from the `which` command.
 
-Logs: `~/Library/Logs/goodlinks-instapaper.log`
+Logs: `~/Library/Logs/goodlinks2insta.log`
 
 To uninstall:
 ```bash
-launchctl unload ~/Library/LaunchAgents/com.elidickinson.goodlinks-instapaper.plist
-rm ~/Library/LaunchAgents/com.elidickinson.goodlinks-instapaper.plist
+launchctl unload ~/Library/LaunchAgents/com.elidickinson.goodlinks2insta.plist
+rm ~/Library/LaunchAgents/com.elidickinson.goodlinks2insta.plist
 ```
 
 ## Config
 
-Edit `~/Library/Application Support/goodlinks-instapaper/config.json`:
+Edit `~/Library/Application Support/goodlinks2insta/config.json`:
 
 ```json
 {
   "username": "your@email.com",
   "password": "...",
   "launch_goodlinks": true,
-  "log_file": "~/Library/Logs/goodlinks-instapaper.log"
+  "log_file": "~/Library/Logs/goodlinks2insta.log"
 }
 ```
 
