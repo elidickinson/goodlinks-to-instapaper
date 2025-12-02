@@ -203,7 +203,7 @@ def add_to_instapaper(url, title, username, password, max_retries=3):
             elif resp.status_code == 403:
                 raise RuntimeError(
                     "Instapaper authentication failed - check your email and password\n"
-                    "Run './sync.py init' to update your credentials"
+                    "Run 'goodlinks2insta init' to update your credentials"
                 )
             elif resp.status_code == 400:
                 # Bad request - likely invalid URL, don't retry

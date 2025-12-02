@@ -1,0 +1,33 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "goodlinks2insta"
+version = "1.0.0"
+description = "Sync saved links from GoodLinks to Instapaper"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = ["requests"]
+authors = [
+    { name = "Eli Dickinson" }
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: End Users/Desktop",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: MacOS :: MacOS X",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+
+[project.scripts]
+goodlinks2insta = "goodlinks2insta:main"
+
+[tool.hatch.build.targets.sdist]
+include = ["goodlinks2insta.py"]
+
+[tool.hatch.build.targets.wheel]
+include = ["goodlinks2insta.py"]

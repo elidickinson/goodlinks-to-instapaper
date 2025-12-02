@@ -3,13 +3,14 @@
 <plist version="1.0">
 <dict>
     <key>Label</key>
-    <string>com.elidickinson.goodlinks2insta</string>
+    <string>com.sidget.goodlinks2insta</string>
 
     <key>ProgramArguments</key>
     <array>
         <string>/opt/homebrew/bin/uv</string>
+        <string>tool</string>
         <string>run</string>
-        <string>/Users/esd/projects/goodlinks-to-instapaper/sync.py</string>
+        <string>goodlinks2insta</string>
         <string>sync</string>
         <string>--quiet</string>
     </array>
@@ -21,6 +22,6 @@
     <true/>
 
     <key>StandardErrorPath</key>
-    <string>/tmp/goodlinks2insta-stderr.log</string>
+    <string>/tmp/com.sidget.goodlinks2insta-stderr.log</string>
 </dict>
 </plist>
