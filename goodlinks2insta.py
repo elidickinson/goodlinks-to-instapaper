@@ -79,6 +79,15 @@ def launch_goodlinks():
     time.sleep(2)
 
 
+def quit_goodlinks():
+    """Quit GoodLinks app gracefully."""
+    script = 'tell application "GoodLinks" to quit'
+    try:
+        subprocess.run(["osascript", "-e", script], check=True)
+    except subprocess.CalledProcessError as e:
+        log.debug(f"GoodLinks quit command failed: {e}")
+
+
 def ensure_goodlinks_running(launch_if_needed: bool) -> bool:
     """Ensure GoodLinks is running. Returns True if ready, False if not."""
     if is_goodlinks_running():
@@ -267,49 +276,62 @@ def cmd_sync(args):
 
     log.info("Starting sync")
 
+    # Check if GoodLinks was already running
+    was_running = is_goodlinks_running()
+
     # Ensure GoodLinks is running
     if not ensure_goodlinks_running(config.get("launch_goodlinks", True)):
         log.error("GoodLinks not running, skipping sync")
         return
 
-    username = config["username"]
-    password = config["password"]
+    try:
+        username = config["username"]
+        password = config["password"]
 
-    links = get_goodlinks()
-    synced = load_synced_ids()
-    to_sync = [l for l in links if l["id"] not in synced]
+        links = get_goodlinks()
+        synced = load_synced_ids()
+        to_sync = [l for l in links if l["id"] not in synced]
 
-    log.info(f"Found {len(to_sync)} new links to sync (of {len(links)} total)")
+        log.info(f"Found {len(to_sync)} new links to sync (of {len(links)} total)")
 
-    if args.dry_run:
-        for link in to_sync:
-            log.info(f"  Would sync: {link['title'][:70]}")
-        log.info(f"Would sync {len(to_sync)} links")
-        return
+        if args.dry_run:
+            for link in to_sync:
+                log.info(f"  Would sync: {link['title'][:70]}")
+            log.info(f"Would sync {len(to_sync)} links")
+            return
 
-    if not to_sync:
-        log.info("Nothing to sync")
-        return
+        if not to_sync:
+            log.info("Nothing to sync")
+            return
 
-    new_count = 0
-    failed_count = 0
-    for i, link in enumerate(to_sync, 1):
-        title_short = link["title"][:60]
-        if add_to_instapaper(
-            link["url"], link["title"], username, password, max_retries=args.max_retries
-        ):
-            synced.add(link["id"])
-            new_count += 1
-            log.info(f"[{i}/{len(to_sync)}] {title_short}... ok")
-        else:
-            failed_count += 1
-            log.warning(f"[{i}/{len(to_sync)}] {title_short}... FAILED")
-        # Save progress periodically
-        if i % 10 == 0:
-            save_synced_ids(synced)
+        new_count = 0
+        failed_count = 0
+        for i, link in enumerate(to_sync, 1):
+            title_short = link["title"][:60]
+            if add_to_instapaper(
+                link["url"], link["title"], username, password, max_retries=args.max_retries
+            ):
+                synced.add(link["id"])
+                new_count += 1
+                log.info(f"[{i}/{len(to_sync)}] {title_short}... ok")
+            else:
+                failed_count += 1
+                log.warning(f"[{i}/{len(to_sync)}] {title_short}... FAILED")
+            # Save progress periodically
+            if i % 10 == 0:
+                save_synced_ids(synced)
 
-    save_synced_ids(synced)
-    log.info(f"Done: {new_count} synced, {failed_count} failed")
+        save_synced_ids(synced)
+        log.info(f"Done: {new_count} synced, {failed_count} failed")
+
+    finally:
+        # Close GoodLinks if we opened it
+        if not was_running:
+            log.info("Closing GoodLinks")
+            try:
+                quit_goodlinks()
+            except Exception as e:
+                log.warning(f"Failed to close GoodLinks: {e}")
 
 
 def cmd_status(args):
