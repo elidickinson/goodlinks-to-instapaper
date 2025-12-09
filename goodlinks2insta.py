@@ -41,6 +41,17 @@ APP_DIR = Path("~/Library/Application Support/goodlinks2insta").expanduser()
 STATE_FILE = APP_DIR / "synced.json"
 CONFIG_FILE = APP_DIR / "config.json"
 DEFAULT_LOG_FILE = Path("~/Library/Logs/goodlinks2insta.log").expanduser()
+DEFAULT_SYNC_DELAY = 5  # Seconds to wait for iCloud sync after launching GoodLinks
+
+# Read version from pyproject.toml
+def get_version():
+    """Get version from pyproject.toml."""
+    import tomllib
+    with open("pyproject.toml", "rb") as f:
+        data = tomllib.load(f)
+    return data["project"]["version"]
+
+__version__ = get_version()
 
 log = logging.getLogger("goodlinks2insta")
 
@@ -73,10 +84,25 @@ def is_goodlinks_running():
     return result.returncode == 0
 
 
-def launch_goodlinks():
-    """Launch GoodLinks app."""
-    subprocess.run(["open", "-a", "GoodLinks"], check=True)
-    time.sleep(2)
+def launch_goodlinks(sync_delay: int):
+    """Launch GoodLinks app hidden in background.
+
+    Args:
+        sync_delay: Seconds to wait after launch for iCloud sync
+    """
+    subprocess.run(["open", "-a", "GoodLinks", "-g"], check=True)
+    time.sleep(1)
+    # Hide the app window
+    script = 'tell application "System Events" to set visible of process "GoodLinks" to false'
+    try:
+        subprocess.run(["osascript", "-e", script], check=True)
+    except subprocess.CalledProcessError:
+        pass  # If hiding fails, app still works, just visible
+
+    # Wait for GoodLinks to sync from iCloud
+    if sync_delay > 0:
+        log.info(f"Waiting {sync_delay}s for GoodLinks to sync from iCloud...")
+        time.sleep(sync_delay)
 
 
 def quit_goodlinks():
@@ -88,14 +114,14 @@ def quit_goodlinks():
         log.debug(f"GoodLinks quit command failed: {e}")
 
 
-def ensure_goodlinks_running(launch_if_needed: bool) -> bool:
+def ensure_goodlinks_running(launch_if_needed: bool, sync_delay: int) -> bool:
     """Ensure GoodLinks is running. Returns True if ready, False if not."""
     if is_goodlinks_running():
         return True
 
     if launch_if_needed:
         log.info("Launching GoodLinks...")
-        launch_goodlinks()
+        launch_goodlinks(sync_delay)
         if is_goodlinks_running():
             return True
         else:
@@ -160,6 +186,7 @@ def load_config():
     config = json.loads(CONFIG_FILE.read_text())
     # Apply defaults
     config.setdefault("launch_goodlinks", True)
+    config.setdefault("sync_delay", DEFAULT_SYNC_DELAY)
     config.setdefault("log_file", str(DEFAULT_LOG_FILE))
     return config
 
@@ -271,7 +298,7 @@ def cmd_sync(args):
     config = load_config()
 
     # Setup logging
-    log_file = Path(config["log_file"]).expanduser() if config.get("log_file") else None
+    log_file = Path(config["log_file"]).expanduser()
     setup_logging(quiet=args.quiet, log_file=log_file)
 
     log.info("Starting sync")
@@ -280,7 +307,7 @@ def cmd_sync(args):
     was_running = is_goodlinks_running()
 
     # Ensure GoodLinks is running
-    if not ensure_goodlinks_running(config.get("launch_goodlinks", True)):
+    if not ensure_goodlinks_running(config["launch_goodlinks"], config["sync_delay"]):
         log.error("GoodLinks not running, skipping sync")
         return
 
@@ -361,10 +388,18 @@ def cmd_reset(args):
         print("No sync state to reset")
 
 
+def cmd_version(args):
+    """Show version."""
+    print(f"goodlinks2insta {__version__}")
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="Sync GoodLinks to Instapaper",
         formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    parser.add_argument(
+        "-v", "--version", action="version", version=f"goodlinks2insta {__version__}"
     )
 
     subparsers = parser.add_subparsers(dest="command", metavar="command")
@@ -405,6 +440,10 @@ def main():
     # reset command
     reset_parser = subparsers.add_parser("reset", help="reset sync state")
     reset_parser.set_defaults(func=cmd_reset)
+
+    # version command
+    version_parser = subparsers.add_parser("version", help="show version")
+    version_parser.set_defaults(func=cmd_version)
 
     args = parser.parse_args()
 
